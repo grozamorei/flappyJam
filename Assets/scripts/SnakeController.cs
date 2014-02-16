@@ -16,15 +16,20 @@ public class SnakeController : MonoBehaviour {
     public float lerpInAir = 0.3f;
 
     public Camera mainCamera;
+    public Transform shadow;
     
     public LayerMask groundLayer;
     public LayerMask wallLayer;
     public LayerMask deathTriggerLayer;
+    public LayerMask shadowReflectionLayer;
 
     private bool isGrounded = false;
     private CameraFollow _followScript;
 
     private Animator _animator;
+
+    private float minimumDistance;
+    private float shadowOriginalScale;
 
     private float _cameraDiff;
     private Dictionary<float, Dictionary<float, float>> _keyToRotation;
@@ -32,6 +37,8 @@ public class SnakeController : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+        minimumDistance = 0.48f;
+        shadowOriginalScale = shadow.localScale.x;
 
         fillMoveValues();
 
@@ -84,6 +91,23 @@ public class SnakeController : MonoBehaviour {
             transform.rotation = Quaternion.identity;
             rigidbody.velocity = Vector3.zero;
             return;
+        }
+
+        // updating shadow
+        RaycastHit hitInfo = new RaycastHit();
+        bool hit = Physics.Raycast(transform.position, Vector3.down, out hitInfo, Mathf.Infinity, shadowReflectionLayer.value);
+        if(hit) {
+            shadow.gameObject.SetActive(true);
+
+            shadow.position = new Vector3(hitInfo.point.x, hitInfo.point.y + 0.05f, hitInfo.point.z);
+
+            float tScale = Mathf.Min(this.minimumDistance / hitInfo.distance * 2.5f, 1);
+            //Debug.Log(minimumDistance / hitInfo.distance * 2);
+
+            shadow.localScale = new Vector3(this.shadowOriginalScale * tScale, 1, this.shadowOriginalScale * tScale);
+        }
+        else {
+            shadow.gameObject.SetActive(false);
         }
 
         // determine if touching ground:
