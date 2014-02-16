@@ -7,3 +7,4 @@ bin/
 *.csproj
 *.unityproj
 *.sln
+*.suo

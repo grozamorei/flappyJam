@@ -2,21 +2,31 @@
 using System.Collections;
 using System.Collections.Generic;
 
+[RequireComponent(typeof(CameraFollow))]
 public class SnakeController : MonoBehaviour {
 
     private static string SIN_KEY = "sin";
     private static string COS_KEY = "cos";
 
-    public float maxSpeed = 0f;
+    public float maxSpeed = 4f;
     public float jumpImpulse = 12f;
+
+    public float lerpAtMaxSpeed = 0.07f;
+    public float lerpAtMinSpeed = 0.2f;
+    public float lerpInAir = 0.3f;
+
     public Camera mainCamera;
-    public LayerMask whatIsGround;
+    
+    public LayerMask groundLayer;
+    public LayerMask wallLayer;
+    public LayerMask deathTriggerLayer;
 
     private bool isGrounded = false;
+    private CameraFollow _followScript;
 
     private Animator _animator;
-    private Transform _container;
 
+    private float _cameraDiff;
     private Dictionary<float, Dictionary<float, float>> _keyToRotation;
     private Dictionary<float, Dictionary<string, float>> _rotationToSinCos;
 
@@ -26,27 +36,27 @@ public class SnakeController : MonoBehaviour {
         fillMoveValues();
 
         _animator = GetComponent<Animator>();
-        _container = GetComponent<Transform>();
+        _followScript = GetComponent<CameraFollow>();
 	}
 
     private void fillMoveValues() {
-        float cameraDiff = this.mainCamera.transform.rotation.eulerAngles.y;
+        _cameraDiff = this.mainCamera.transform.rotation.eulerAngles.y;
 
         _keyToRotation = new Dictionary<float, Dictionary<float, float>>();
 
         _keyToRotation.Add(0, new Dictionary<float, float>());
-        _keyToRotation[0].Add(1, 0f + cameraDiff);
-        _keyToRotation[0].Add(-1, 180f + cameraDiff);
+        _keyToRotation[0].Add(1, 0f + _cameraDiff);
+        _keyToRotation[0].Add(-1, 180f + _cameraDiff);
 
         _keyToRotation.Add(1, new Dictionary<float, float>());
-        _keyToRotation[1].Add(1, 45f + cameraDiff);
-        _keyToRotation[1].Add(0, 90f + cameraDiff);
-        _keyToRotation[1].Add(-1, 135f + cameraDiff);
+        _keyToRotation[1].Add(1, 45f + _cameraDiff);
+        _keyToRotation[1].Add(0, 90f + _cameraDiff);
+        _keyToRotation[1].Add(-1, 135f + _cameraDiff);
 
         _keyToRotation.Add(-1, new Dictionary<float, float>());
-        _keyToRotation[-1].Add(1, -45f + cameraDiff);
-        _keyToRotation[-1].Add(0, -90f + cameraDiff);
-        _keyToRotation[-1].Add(-1, -135f + cameraDiff);
+        _keyToRotation[-1].Add(1, -45f + _cameraDiff);
+        _keyToRotation[-1].Add(0, -90f + _cameraDiff);
+        _keyToRotation[-1].Add(-1, -135f + _cameraDiff);
 
         _rotationToSinCos = new Dictionary<float, Dictionary<string, float>>();
         for (int i = -1; i <= 1; i++ ) {
@@ -61,78 +71,97 @@ public class SnakeController : MonoBehaviour {
         }
     }
 
-    private Vector2 lastSpeed = Vector2.zero;
-    private Vector2 lastRawSpeed = Vector2.zero;
-
-    private float escapeSeqTimer = 0;
-    private float directionChange = 0;
-
     private void FixedUpdate(){
         if (_keyToRotation == null) fillMoveValues();
 
-        //определяем, на земле ли персонаж
-
-        isGrounded = Physics.OverlapSphere(transform.position, 0.5f, whatIsGround.value).Length > 0; 
-        //устанавливаем соответствующую переменную в аниматоре
-        _animator.SetBool ("grounded", isGrounded);
-        //устанавливаем в аниматоре значение скорости взлета/падения
-        //anim.SetFloat ("vSpeed", rigidbody2D.velocity.y);
-        //если персонаж в прыжке - выход из метода, чтобы не выполнялись действия, связанные с бегом
-        //if (!isGrounded)
-
-        float rawV = Input.GetAxisRaw("Vertical");
-        float rawH = Input.GetAxisRaw("Horizontal");
-
-        float v = Input.GetAxis("Vertical");
-        float h = Input.GetAxis("Horizontal");
-
-        float absSpeed = Mathf.Max(Mathf.Abs(h), Mathf.Abs(v));
-        _animator.SetFloat("speed", absSpeed);
-
-        if (rawH == 0 && rawV == 0) {
-            if (escapeSeqTimer > 0) {
-                //Debug.Log("ESCAPE SEQ TIME: " + (Time.realtimeSinceStartup - escapeSeqTimer));
-            }
-            escapeSeqTimer = 0;
-            lastRawSpeed.Set(rawH, rawV);
-            lastSpeed.Set(h, v);
+        // determine if fall off:
+        Collider[] overlapDeath = Physics.OverlapSphere(transform.position, 0.5f, deathTriggerLayer.value);
+        //for(int i = 0; i < overlapDeath.Length; i++) {
+        //    Debug.Log(overlapDeath[i]);
+        //}
+        if(overlapDeath.Length > 0) {
+            transform.position = new Vector3(0, 1f, 0);
+            transform.rotation = Quaternion.identity;
+            rigidbody.velocity = Vector3.zero;
             return;
         }
 
-        if (lastRawSpeed.x != 0 && rawH == 0 && rawV != 0) {
-            //Debug.Log("escape sequence in motion! from H");
-            escapeSeqTimer = Time.realtimeSinceStartup;
+        // determine if touching ground:
+        Collider[] overlapGround = Physics.OverlapSphere(transform.position, 0.5f, groundLayer.value);
+        for(int i = 0; i < overlapGround.Length; i++) {
+            //Debug.Log(overlapGround[i]);
         }
-        if (lastRawSpeed.y != 0 && rawV == 0 && rawH != 0) {
-            //Debug.Log("escape sequence in motion! from V");
-            escapeSeqTimer = Time.realtimeSinceStartup;
+        isGrounded = overlapGround.Length > 0;
+        if(isGrounded) {
+            _followScript.updateGroundPoint(transform.position.y);
         }
 
-        float yRotation = _keyToRotation[rawH][rawV];
-        transform.rotation = Quaternion.identity;
-        transform.rotation = Quaternion.Euler(0, yRotation, 0);
+        _animator.SetBool ("grounded", isGrounded);
+
+        float absSpeed;
+        float yRotation;
+        float speed;
+        // joystick axis input is priority:
+        if(_rawJHV.magnitude != 0) {
+            absSpeed = Mathf.Max(Mathf.Abs(_jHV.x), Mathf.Abs(_jHV.y));
+            _animator.SetFloat("speed", absSpeed);
+
+            yRotation = (-1 * Mathf.Atan2(_jHV.y, _jHV.x) * Mathf.Rad2Deg) - 45;
+            //Debug.Log(_jHV + " " + yRotation);
+        } else 
+        if (_rawHV.magnitude != 0) {
+            absSpeed = Mathf.Max(Mathf.Abs(_hv.x), Mathf.Abs(_hv.y));
+            _animator.SetFloat("speed", absSpeed);
+
+            yRotation = _keyToRotation[_rawHV.x][_rawHV.y];
+
+        } else {
+            _animator.SetFloat("speed", 0);
+            return;
+        }
         
+        // keyboard input only if no joystick axis made:
 
-        float speed = absSpeed * maxSpeed;
+        speed = absSpeed * maxSpeed;
+        
+        float lerpRange = this.lerpAtMinSpeed - this.lerpAtMaxSpeed;
+        float lerp = this.isGrounded ? this.lerpAtMaxSpeed + lerpRange - (speed / maxSpeed) * lerpRange : this.lerpInAir;
+        //Debug.Log(speed + " " + (lerpAtMaxSpeed + lerpRange - lerp));
+
+        float toRot = Mathf.LerpAngle(transform.rotation.eulerAngles.y, yRotation, lerp);
+        transform.rotation = Quaternion.identity;
+        transform.rotation = Quaternion.Euler(0, toRot, 0);
+
         rigidbody.velocity = new Vector3(
-            _rotationToSinCos[yRotation][SIN_KEY] * speed, 
+            Mathf.Sin(toRot * Mathf.Deg2Rad) * speed, 
             rigidbody.velocity.y,
-            _rotationToSinCos[yRotation][COS_KEY] * speed
+            Mathf.Cos(toRot * Mathf.Deg2Rad) * speed
         );
-
-        lastSpeed.Set(h, v);
-        lastRawSpeed.Set(rawH, rawV);
     }
+
+    private Vector2 _rawHV = Vector2.zero;
+    private Vector2 _hv = Vector2.zero;
+
+    private Vector2 _rawJHV = Vector2.zero;
+    private Vector2 _jHV = Vector2.zero;
 	
 	// Update is called once per frame
     void Update() {
+        //Debug.Log(Input.GetJoystickNames()[0]);
+
+        _rawHV.Set(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        _hv.Set(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
+
+        if(Input.GetJoystickNames().Length > 0) {
+            _rawJHV.Set(Input.GetAxisRaw("JoystickHorizontal"), Input.GetAxisRaw("JoystickVertical"));
+            _jHV.Set(Input.GetAxis("JoystickHorizontal"), Input.GetAxis("JoystickVertical"));
+        }
+
         //если персонаж на земле и нажат пробел...
-        if (this.isGrounded && Input.GetKeyDown(KeyCode.Space)) {
-            //Debug.Log("OKOKO");
+        if(this.isGrounded && Input.GetAxis("Jump") > 0) {
             //устанавливаем в аниматоре переменную в false
             _animator.SetBool("grounded", false);
             //прикладываем силу вверх, чтобы персонаж подпрыгнул
-            //rigidbody.AddForce(new Vector3(0, 600f, 0));
             rigidbody.velocity = new Vector3(0, jumpImpulse, 0);
         }
     }
