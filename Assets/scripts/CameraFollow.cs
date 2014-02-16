@@ -20,6 +20,7 @@ public class CameraFollow : MonoBehaviour {
         _groundPoint = self.y;
         _startDiff = new Vector3(self.x - camera.x, self.y - camera.y, self.z - camera.z);
 
+
         Debug.Log(_startDiff);
 	}
 
