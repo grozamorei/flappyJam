@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 [RequireComponent(typeof(CameraFollow))]
+[RequireComponent(typeof(TailLogic))]
 public class SnakeController : MonoBehaviour {
 
 
@@ -31,7 +32,10 @@ public class SnakeController : MonoBehaviour {
 	//
 
     private bool isGrounded = false;
-    private CameraFollow _followScript;
+    
+	private CameraFollow _followScript;
+	private TailLogic _tailScript;
+	private Transform _tailAnchor;
 
     private Animator _animator;
 
@@ -56,10 +60,23 @@ public class SnakeController : MonoBehaviour {
         minimumDistance = 0.48f;
         shadowOriginalScale = shadow.localScale.x;
 
-        fillMoveValues();
-
         _animator = GetComponent<Animator>();
         _followScript = GetComponent<CameraFollow>();
+		_tailScript = GetComponent<TailLogic>();
+
+
+		//Debug.Log(this.gameObject.getchi)
+		foreach(Transform child in transform) {
+			//Debug.Log(child);
+			if (child.name == "tail anchor") {
+				//Debug.Log("some shit " + child.transform.position + "; " + child.transform.localPosition);
+				_tailAnchor = child;
+			}
+		}
+
+        initComponent();
+
+		_tailScript.addLink();
 	}
 
 	public void Update() {
@@ -82,7 +99,7 @@ public class SnakeController : MonoBehaviour {
 	}
 
     private void FixedUpdate() {
-        if (_keyToRotation == null) fillMoveValues();
+        if (_keyToRotation == null) initComponent();
 
 		checkDeathTriggers();
 		updateShadow();
@@ -135,6 +152,8 @@ public class SnakeController : MonoBehaviour {
 			rigidbody.velocity.y,
 			Mathf.Cos(toRot * Mathf.Deg2Rad) * speed
 		);
+
+		_tailScript.updatePosition();
 	}
 
 	private void checkDeathTriggers() {
@@ -187,7 +206,7 @@ public class SnakeController : MonoBehaviour {
 	//
 	// Util methods
 	//
-	private void fillMoveValues() {
+	private void initComponent() {
 		_cameraDiff = this.mainCamera.transform.rotation.eulerAngles.y;
 		
 		_keyToRotation = new Dictionary<float, Dictionary<float, float>>();
@@ -205,5 +224,7 @@ public class SnakeController : MonoBehaviour {
 		_keyToRotation[-1].Add(1, -45f + _cameraDiff);
 		_keyToRotation[-1].Add(0, -90f + _cameraDiff);
 		_keyToRotation[-1].Add(-1, -135f + _cameraDiff);
+
+		_tailScript.injectFirstAnchor(this._tailAnchor);
 	}
 }

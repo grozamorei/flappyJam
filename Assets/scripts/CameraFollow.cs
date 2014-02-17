@@ -24,22 +24,25 @@ public class CameraFollow : MonoBehaviour {
 	//
 
 	void Start () {
-        Vector3 self = this.transform.position;
+        Vector3 snakeHead = this.transform.position;
         Vector3 camera = this.mainCamera.transform.position;
 
-        _groundPoint = self.y;
-        _startDiff = new Vector3(self.x - camera.x, self.y - camera.y, self.z - camera.z);
+        _groundPoint = snakeHead.y;
+        _startDiff = new Vector3(snakeHead.x - camera.x, snakeHead.y - camera.y, snakeHead.z - camera.z);
 
 
         Debug.Log(_startDiff);
 	}
 
     private void FixedUpdate() {
-        Vector3 self = this.transform.position;
+        Vector3 snakeHead = this.transform.position;
         Vector3 camera = this.mainCamera.transform.position;
 
-        Vector3 currentDiff = new Vector3(self.x - camera.x - _startDiff.x, _groundPoint - camera.y - _startDiff.y, self.z - camera.z - _startDiff.z);
-        //Debug.Log(currentDiff.y);
+        Vector3 currentDiff = new Vector3(
+			snakeHead.x - camera.x - _startDiff.x, 
+			_groundPoint - camera.y - _startDiff.y, 
+			snakeHead.z - camera.z - _startDiff.z
+		);
 
         if (currentDiff.magnitude > 0) {
             this.mainCamera.transform.position = new Vector3(
