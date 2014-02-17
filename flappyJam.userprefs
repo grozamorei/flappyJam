@@ -1,10 +1,8 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace />
-  <MonoDevelop.Ide.Workbench ActiveDocument="..\sample project\Assets\Sample Assets\Characters\Third Person Character\Scripts\ThirdPersonCharacter.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\scripts\SnakeController.cs">
     <Files>
-      <File FileName="..\sample project\Assets\Sample Assets\Characters\Third Person Character\Scripts\ThirdPersonUserControl.cs" Line="79" Column="16" />
-      <File FileName="..\sample project\Assets\Sample Assets\Cross Platform Input\Scripts\CrossPlatformInput.cs" Line="5" Column="1" />
-      <File FileName="..\sample project\Assets\Sample Assets\Characters\Third Person Character\Scripts\ThirdPersonCharacter.cs" Line="70" Column="2" />
+      <File FileName="Assets\scripts\SnakeController.cs" Line="16" Column="24" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
