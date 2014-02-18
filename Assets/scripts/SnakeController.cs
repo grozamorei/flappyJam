@@ -76,8 +76,8 @@ public class SnakeController : MonoBehaviour
 
 				_tailScript.addLink ();
 				_tailScript.addLink ();
-				_tailScript.addLink ();
-				_tailScript.addLink ();
+				//_tailScript.addLink ();
+				//_tailScript.addLink ();
 		}
 
 		public void Update ()
@@ -128,15 +128,15 @@ public class SnakeController : MonoBehaviour
 			
 						yRotation = (-1 * Mathf.Atan2 (_jHV.y, _jHV.x) * Mathf.Rad2Deg) - 45;
 						//Debug.Log(_jHV + " " + yRotation);
-				} else 
-		if (_rawHV.magnitude != 0) {
+				} else if (_rawHV.magnitude != 0) {
 						absSpeed = Mathf.Max (Mathf.Abs (_hv.x), Mathf.Abs (_hv.y));
 						_animator.SetFloat ("speed", absSpeed);
 			
 						yRotation = _keyToRotation [_rawHV.x] [_rawHV.y];
-			
+
 				} else {
 						_animator.SetFloat ("speed", 0);
+						//rigidbody.velocity = Vector3.zero;
 						_tailScript.updateInfo (!isGrounded);
 						return;
 				}

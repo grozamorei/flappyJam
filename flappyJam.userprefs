@@ -1,10 +1,10 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="MonoDevelop.Default" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\scripts\SnakeController.cs">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\scripts\TailLogic.cs">
     <Files>
-      <File FileName="Assets\scripts\TailLogic.cs" Line="1" Column="1" />
-      <File FileName="Assets\scripts\SnakeController.cs" Line="181" Column="1" />
+      <File FileName="Assets\scripts\SnakeController.cs" Line="1" Column="1" />
       <File FileName="Assets\scripts\CameraFollow.cs" Line="1" Column="1" />
+      <File FileName="Assets\scripts\TailLogic.cs" Line="131" Column="46" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
