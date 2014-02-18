@@ -4,7 +4,7 @@
     <Files>
       <File FileName="Assets\scripts\SnakeController.cs" Line="1" Column="1" />
       <File FileName="Assets\scripts\CameraFollow.cs" Line="1" Column="1" />
-      <File FileName="Assets\scripts\TailLogic.cs" Line="131" Column="46" />
+      <File FileName="Assets\scripts\TailLogic.cs" Line="133" Column="15" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
