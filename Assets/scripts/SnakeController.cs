@@ -3,9 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 
 [RequireComponent(typeof(CameraFollow))]
-[RequireComponent(typeof(TailLogic))]
-public class SnakeController : MonoBehaviour
-{
+[RequireComponent(typeof(TailGenerator))]
+public class SnakeController : MonoBehaviour {
 
 
     //
@@ -21,7 +20,8 @@ public class SnakeController : MonoBehaviour
 
     public Camera mainCamera;
     public Transform shadow;
-    
+
+
     public LayerMask groundLayer;
     public LayerMask wallLayer;
     public LayerMask deathTriggerLayer;
@@ -35,7 +35,7 @@ public class SnakeController : MonoBehaviour
     private bool isGrounded = false;
     
     private CameraFollow _followScript;
-    private TailLogic _tailScript;
+    private TailGenerator _tailGenerator;
     private Transform _tailAnchor;
 
     private Animator _animator;
@@ -57,14 +57,13 @@ public class SnakeController : MonoBehaviour
     // System methods
     //
 
-    public void Start ()
-    {
+    public void Start () {
         minimumDistance = 0.48f;
         shadowOriginalScale = shadow.localScale.x;
 
         _animator = GetComponent<Animator> ();
         _followScript = GetComponent<CameraFollow> ();
-        _tailScript = GetComponent<TailLogic> ();
+        _tailGenerator = GetComponent<TailGenerator> ();
 
         foreach (Transform child in transform) {
             if (child.name == "tail anchor") {
@@ -74,24 +73,14 @@ public class SnakeController : MonoBehaviour
 
         initComponent ();
 
-        _tailScript.addLink ();
-        _tailScript.addLink ();
-        _tailScript.addLink ();
-        _tailScript.addLink ();
-        _tailScript.addLink ();
-        _tailScript.addLink ();
-        _tailScript.addLink ();
-        _tailScript.addLink ();
-        _tailScript.addLink ();
-        _tailScript.addLink ();
-        _tailScript.addLink ();
-        _tailScript.addLink ();
+        _tailGenerator.addLink ();
+        _tailGenerator.addLink ();
+        _tailGenerator.addLink ();
+        _tailGenerator.addLink ();
+
     }
 
-    public void Update ()
-    {
-        //Debug.Log(Input.GetJoystickNames()[0]);
-
+    public void Update () {
         // Axis input handle
         _rawHV.Set (Input.GetAxisRaw ("Horizontal"), Input.GetAxisRaw ("Vertical"));
         _hv.Set (Input.GetAxis ("Horizontal"), Input.GetAxis ("Vertical"));
@@ -108,8 +97,7 @@ public class SnakeController : MonoBehaviour
         }
     }
 
-    private void FixedUpdate ()
-    {
+    private void FixedUpdate () {
         if (_keyToRotation == null)
             initComponent ();
 
@@ -118,14 +106,15 @@ public class SnakeController : MonoBehaviour
         checkGroundTriggers ();
 
         updateMovement ();
+
+        updateTail ();
     }
 
 
     //
     // Logic
     //
-    private void updateMovement ()
-    {
+    private void updateMovement () {
         float absSpeed;
         float yRotation;
         float speed;
@@ -144,8 +133,6 @@ public class SnakeController : MonoBehaviour
 
         } else {
             _animator.SetFloat ("speed", 0);
-            //rigidbody.velocity = Vector3.zero;
-            _tailScript.updateInfo (!isGrounded, rigidbody.velocity);
             return;
         }
 		
@@ -167,15 +154,14 @@ public class SnakeController : MonoBehaviour
             rigidbody.velocity.y,
             Mathf.Cos (toRot * Mathf.Deg2Rad) * speed
         );
-
-        //Vector2 velXZ = new Vector2 (rigidbody.velocity.x, rigidbody.velocity.z);
-        //Debug.Log (rigidbody.velocity + "; " + velXZ.magnitude);
-
-        _tailScript.updateInfo (true, rigidbody.velocity);
     }
 
-    private void checkDeathTriggers ()
-    {
+    private void updateTail () {
+        _tailGenerator.updateInfo (rigidbody.velocity);
+    }
+
+
+    private void checkDeathTriggers () {
         // determine if touching death trigger:
         Collider[] overlapDeath = Physics.OverlapSphere (transform.position, 0.5f, deathTriggerLayer.value);
         //for(int i = 0; i < overlapDeath.Length; i++) {
@@ -190,8 +176,7 @@ public class SnakeController : MonoBehaviour
         }
     }
 		
-    private void updateShadow ()
-    {
+    private void updateShadow () {
         RaycastHit hitInfo = new RaycastHit ();
         bool hit = Physics.Raycast (transform.position, Vector3.down, out hitInfo, Mathf.Infinity, shadowReflectionLayer.value);
         if (hit) {
@@ -208,8 +193,7 @@ public class SnakeController : MonoBehaviour
         }
     }
 
-    private void checkGroundTriggers ()
-    {
+    private void checkGroundTriggers () {
         // TODO: this value should be taken from collider size
         Collider[] overlapGround = Physics.OverlapSphere (transform.position, 0.5f, groundLayer.value);
         //for(int i = 0; i < overlapGround.Length; i++) {
@@ -227,8 +211,7 @@ public class SnakeController : MonoBehaviour
     //
     // Util methods
     //
-    private void initComponent ()
-    {
+    private void initComponent () {
         _cameraDiff = this.mainCamera.transform.rotation.eulerAngles.y;
 		
         _keyToRotation = new Dictionary<float, Dictionary<float, float>> ();
@@ -247,6 +230,6 @@ public class SnakeController : MonoBehaviour
         _keyToRotation [-1].Add (0, -90f + _cameraDiff);
         _keyToRotation [-1].Add (-1, -135f + _cameraDiff);
 
-        _tailScript.injectFirstAnchor (this._tailAnchor, this.transform);
+        _tailGenerator.inject (this._tailAnchor, this.maxSpeed);
     }
 }
