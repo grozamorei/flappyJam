@@ -10,10 +10,12 @@ public class TailLogic : MonoBehaviour
 
     public Transform linkPrefab;
 
-    public float maxMagnitude = 1f;
+    public float minBound = 0.6f;
+    public float maxBound = 0.8f;
+    
+    public float minBoundLerp = 0.9f;
+    public float maxBoundLerp = 0.5f;
 
-    public float lerp = 0.1f;
-    public float angleLerp = 0.05f;
 
     //
     // Private scope
@@ -21,9 +23,12 @@ public class TailLogic : MonoBehaviour
 
     private Transform _anchor;
     private Transform _head;
+    private float _headMaxVelocity;
 
     private TailLink _rootLink;
     private bool _headMoving = false;
+    private Vector3 _virtualVel;
+
 
     //
     // System methods
@@ -35,16 +40,12 @@ public class TailLogic : MonoBehaviour
 	
     public void FixedUpdate ()
     {
-        //if (!_headMoving)
-        //		return;
         if (_rootLink == null)
             return;
-        Vector3 vel = _head.GetComponent<Rigidbody> ().velocity;
-        //Debug.Log (vel.magnitude);
-        //if (Mathf.Abs (vel.magnitude) > 0.3f) {
-        _rootLink.update (lerp, angleLerp, _head.rotation.eulerAngles);
 
-        //}
+        //Vector3 vel = _head.GetComponent<Rigidbody> ().velocity;
+
+        _rootLink.update (_headMaxVelocity, minBound, maxBound, minBoundLerp, maxBoundLerp, _virtualVel, Time.fixedDeltaTime);
     }
 
     //
@@ -55,11 +56,13 @@ public class TailLogic : MonoBehaviour
     {
         _anchor = anchor;
         _head = head;
+        _headMaxVelocity = head.GetComponent<SnakeController> ().maxSpeed;
     }
 
-    public void updateInfo (bool moving)
+    public void updateInfo (bool moving, Vector3 virtualVel)
     {
         _headMoving = moving;
+        _virtualVel = virtualVel;
         //Debug.Log (this._anchor.position);
     }
 
@@ -118,45 +121,43 @@ class TailLink
     }
 
 
-    public void update (float withLerp, float withAngleLerp, Vector3 parentEuler)
+    public void update (float maxVelXZ, 
+                        float minBound, float maxBound, 
+                        float minBoundLerp, float maxBoundLerp, 
+                        Vector3 currentVel, float timeDelta)
     {
-        Vector3 self = _link.position;
-        Vector3 selfEuler = _link.rotation.eulerAngles;
+        Vector2 currentVelXZ = new Vector2 (currentVel.x, currentVel.z);
+        Vector2 selfPosXZ = new Vector2 (_link.position.x, _link.position.z);
+        Vector2 anchorPosXZ = new Vector2 (_parentAnchor.position.x, _parentAnchor.position.z);
 
-        Vector3 anchor = _parentAnchor.position;
+        float distance = Vector2.Distance (selfPosXZ, anchorPosXZ);
+        //Debug.Log(distance);
 
-        float dist = Vector3.Distance (self, anchor);
-        //Debug.Log (Vector3.Distance (self, anchor));
-				
-        if (dist > 1f) {
-            //Debug.Log (Vector3. (self, anchor));
-            Vector3 some = Vector3.MoveTowards (self, anchor, );
-            //Debug.Log (some);
-            return;
-            _link.position = new Vector3 (
-                self.x + some.x,
-                self.y + some.y,
-                self.z + some.z
-            );
+        float maxTravelDistance = distance - minBound - 0.01f;
+        Vector2 middlePosXZ;
+
+        if (distance >= minBound) {
+
+            float velocityRatio = currentVelXZ.magnitude / maxVelXZ;
+            float lerpDiff = minBoundLerp - maxBoundLerp;
+
+            float currentLerp = minBoundLerp - lerpDiff * velocityRatio;
+
+            if (distance >= maxBound) {
+                //currentLerp *= 1.1f;
+            }
+            //Debug.Log (velocityRatio + "; " + currentVelXZ);
+
+            //Debug.Log (dist + " " + maxBound);
+            middlePosXZ = Vector2.MoveTowards (selfPosXZ, anchorPosXZ, maxTravelDistance * currentLerp);
+            _link.position = new Vector3 (middlePosXZ.x, _link.position.y, middlePosXZ.y);
         }
 				
-        return;
-        _link.position = new Vector3 (
-					Mathf.Lerp (self.x, anchor.x, withLerp),
-					Mathf.Lerp (self.y, anchor.y, withLerp),
-					Mathf.Lerp (self.z, anchor.z, withLerp)
-        );
-
-        //_link.rotation = Quaternion.identity;
-        //_link.rotation = Quaternion.Euler (
-        //	Mathf.LerpAngle (selfEuler.x, parentEuler.x, withAngleLerp),
-        //	Mathf.LerpAngle (selfEuler.y, parentEuler.y, withAngleLerp),
-        //	Mathf.LerpAngle (selfEuler.z, parentEuler.z, withAngleLerp)
-        //);
+        //return;
 				
         if (_child == null)
             return;
 				
-        _child.update (withLerp, withAngleLerp, _link.rotation.eulerAngles);
+        _child.update (maxVelXZ, minBound, maxBound, minBoundLerp, maxBoundLerp, currentVel, timeDelta);
     }
 }
