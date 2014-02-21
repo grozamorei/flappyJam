@@ -26,15 +26,13 @@ public class LinkLogic : MonoBehaviour {
     private LinkLogic _parent;
     private LinkLogic _child;
 
-    public void setAnchor (Transform parentAnchor) {
-        this._parentAnchor = parentAnchor;
-    }
+    //
+    // 'Constructor'
+    //
 
-    void Start () {
-        //Debug.Log ("SCALE: " + links [0]);
-
-        int myDepth = detectDepth ();
-        transform.localScale = new Vector3 (links [myDepth].scale, links [myDepth].scale, links [myDepth].scale);
+    public void Inject (Transform parentAnchor) {
+        Debug.Log ("Anchor set: " + parentAnchor);
+        _parentAnchor = parentAnchor;
 
         foreach (Transform child in this.transform) {
             if (child.name == "tail anchor") {
@@ -47,16 +45,16 @@ public class LinkLogic : MonoBehaviour {
     // API
     //
 
-    public void addLink (Transform prefab) {
+    public void addLink () {
         if (_child == null) {
             //_child = (LinkLogic)Instantiate (this.gameObject, _selfAnchor.position, Quaternion.identity);
             //_child._parent = this;
-            Transform tr = (Transform)Instantiate (prefab, _selfAnchor.position, Quaternion.identity);
+            Transform tr = (Transform)Instantiate (transform, _selfAnchor.position, Quaternion.identity);
             _child = tr.GetComponent<LinkLogic> ();
-            _child.setAnchor (_selfAnchor);
+            _child.Inject (_selfAnchor);
             _child._parent = this;
         } else {
-            _child.addLink (prefab);
+            _child.addLink ();
         }
     }
     
@@ -64,6 +62,11 @@ public class LinkLogic : MonoBehaviour {
     public void externalUpdate (float maxVelXZ, 
                         Vector3 currentVel, float timeDelta) {
         int myDepth = detectDepth ();
+
+        if (transform.localScale.x != links [myDepth].scale) {
+            fixScale (myDepth);
+        }
+
         float minBound = this.links [myDepth].minBound;
 
         Vector2 currentVelXZ = new Vector2 (currentVel.x, currentVel.z);
@@ -105,5 +108,12 @@ public class LinkLogic : MonoBehaviour {
         if (_parent != null)
             return _parent.detectDepth () + 1;
         return 0;
+    }
+
+    //
+    // Util
+    //
+    private void fixScale (int myDepth) {
+        transform.localScale = new Vector3 (links [myDepth].scale, links [myDepth].scale, links [myDepth].scale);
     }
 }

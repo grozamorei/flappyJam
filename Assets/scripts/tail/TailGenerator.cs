@@ -17,7 +17,7 @@ public class TailGenerator : MonoBehaviour {
     // Public scope
     //
 
-    public Transform tailPiecePrefab;
+    public Transform TailPiecePrefab;
 
 
     //
@@ -28,13 +28,9 @@ public class TailGenerator : MonoBehaviour {
     private Transform _rootAnchor;
 
 
-
     private float _maxVirtualVelocity;
     private Vector3 _currentVirtualVel;
 
-    public void Start () {
-
-    }
 
     public void FixedUpdate () {
         if (_rootLink == null)
@@ -55,11 +51,11 @@ public class TailGenerator : MonoBehaviour {
 
     public void addLink () {
         if (_rootLink == null) {
-            Transform tr = (Transform)Instantiate (tailPiecePrefab, _rootAnchor.position, Quaternion.identity);
+            Transform tr = (Transform)Instantiate (TailPiecePrefab, _rootAnchor.position, Quaternion.identity);
             _rootLink = tr.GetComponent<LinkLogic> ();
-            _rootLink.setAnchor (_rootAnchor);
+            _rootLink.Inject (_rootAnchor);
         } else {
-            _rootLink.addLink (tailPiecePrefab);
+            _rootLink.addLink ();
         }
     }
 }

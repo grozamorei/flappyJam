@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -77,6 +77,7 @@ public class SnakeController : MonoBehaviour {
         _tailGenerator.addLink ();
         _tailGenerator.addLink ();
         _tailGenerator.addLink ();
+        _tailGenerator.addLink ();
 
     }
 
@@ -107,7 +108,7 @@ public class SnakeController : MonoBehaviour {
 
         updateMovement ();
 
-        updateTail ();
+        _tailGenerator.updateInfo (rigidbody.velocity);
     }
 
 
@@ -155,11 +156,6 @@ public class SnakeController : MonoBehaviour {
             Mathf.Cos (toRot * Mathf.Deg2Rad) * speed
         );
     }
-
-    private void updateTail () {
-        _tailGenerator.updateInfo (rigidbody.velocity);
-    }
-
 
     private void checkDeathTriggers () {
         // determine if touching death trigger:
